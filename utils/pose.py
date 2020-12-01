@@ -68,7 +68,9 @@ def calc_pose(param):
     s, R, t3d = P2sRt(P)
     P = np.concatenate((R, t3d.reshape(3, -1)), axis=1)  # without scale
     pose = matrix2angle(R)
+    print("pose before", pose)
     pose = [p * 180 / np.pi for p in pose]
+    print("pose after", pose)
 
     return P, pose
 
@@ -103,10 +105,13 @@ def plot_pose_box(img, P, ver, color=(40, 255, 0), line_width=2):
         kpt: (2, 68) or (3, 68)
     """
     llength = calc_hypotenuse(ver)
+    # llength = 100
     point_3d = build_camera_box(llength)
     # Map to 2d image points
     point_3d_homo = np.hstack((point_3d, np.ones([point_3d.shape[0], 1])))  # n x 4
     point_2d = point_3d_homo.dot(P.T)[:, :2]
+
+    print("np.mean(ver[:2, :27], 1)", np.mean(ver[:2, :27], 1))
 
     point_2d[:, 1] = - point_2d[:, 1]
     point_2d[:, :2] = point_2d[:, :2] - np.mean(point_2d[:4, :2], 0) + np.mean(ver[:2, :27], 1)
@@ -123,12 +128,28 @@ def plot_pose_box(img, P, ver, color=(40, 255, 0), line_width=2):
 
     return img
 
+def viz_pose(img, param_lst, detection_lst, show_flag=False, wfp=None):
+    
+    for param, det in zip(param_lst, detection_lst):
+        # for param in param_lst:
+        print("det", det)
+        # exit(10)
+        # ver = []
+        tl, br = det
+        ver = [tl, (br[0], tl[1]), br, (tl[0], br[1])]
+        print("ver", np.asarray(ver))
 
-def viz_pose(img, param_lst, ver_lst, show_flag=False, wfp=None):
-    # for param, ver in zip(param_lst, ver_lst):
-    for param in param_lst:
         P, pose = calc_pose(param)
-        # img = plot_pose_box(img, P, ver)
+        img = plot_pose_box(img, P, np.asarray(ver))
+        # draw_annotation_box(image, rotation_vector, translation_vector, color=(255, 255, 255), line_width=2):
+        # face_angles = (pose[0], pose[1], pose[2])
+        # face_angles = [p * np.pi / 180 for p in face_angles]
+        # print("face_angles", face_angles)
+
+        # print("t", P[:, 3])
+        # draw_annotation_box(img, np.asarray(face_angles), P[:, 3])
+
+
         # print(P[:, :3])
         print(f'yaw: {pose[0]:.1f}, pitch: {pose[1]:.1f}, roll: {pose[2]:.1f}')
 
@@ -140,3 +161,17 @@ def viz_pose(img, param_lst, ver_lst, show_flag=False, wfp=None):
         plot_image(img)
 
     return img
+
+
+def get_pose_angles(param_lst):
+    """
+    From a list of params, return a list of face angles like (yaw, pitch, roll)
+    """
+    angle_lst = []
+    for param in param_lst:
+        P, pose = calc_pose(param)
+        face_angles = (pose[0], pose[1], pose[2])
+
+        angle_lst.append(face_angles)
+
+    return angle_lst
