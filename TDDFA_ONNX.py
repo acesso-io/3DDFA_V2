@@ -13,8 +13,8 @@ from utils.functions import (
     crop_img, parse_roi_box_from_bbox, parse_roi_box_from_landmark,
 )
 from utils.tddfa_util import _parse_param, similar_transform
-from bfm.bfm import BFMModel
-from bfm.bfm_onnx import convert_bfm_to_onnx
+# from bfm.bfm import BFMModel
+# from bfm.bfm_onnx import convert_bfm_to_onnx
 
 make_abs_path = lambda fn: osp.join(osp.dirname(osp.realpath(__file__)), fn)
 
@@ -26,20 +26,20 @@ class TDDFA_ONNX(object):
         # torch.set_grad_enabled(False)
 
         # load onnx version of BFM
-        bfm_fp = kvs.get('bfm_fp', make_abs_path('configs/bfm_noneck_v3.pkl'))
-        bfm_onnx_fp = bfm_fp.replace('.pkl', '.onnx')
-        if not osp.exists(bfm_onnx_fp):
-            convert_bfm_to_onnx(
-                bfm_onnx_fp,
-                shape_dim=kvs.get('shape_dim', 40),
-                exp_dim=kvs.get('exp_dim', 10)
-            )
-        self.bfm_session = onnxruntime.InferenceSession(bfm_onnx_fp, None)
+        # bfm_fp = kvs.get('bfm_fp', make_abs_path('configs/bfm_noneck_v3.pkl'))
+        # bfm_onnx_fp = bfm_fp.replace('.pkl', '.onnx')
+        # if not osp.exists(bfm_onnx_fp):
+        #     convert_bfm_to_onnx(
+        #         bfm_onnx_fp,
+        #         shape_dim=kvs.get('shape_dim', 40),
+        #         exp_dim=kvs.get('exp_dim', 10)
+        #     )
+        # self.bfm_session = onnxruntime.InferenceSession(bfm_onnx_fp, None)
 
-        # load for optimization
-        bfm = BFMModel(bfm_fp, shape_dim=kvs.get('shape_dim', 40), exp_dim=kvs.get('exp_dim', 10))
-        self.tri = bfm.tri
-        self.u_base, self.w_shp_base, self.w_exp_base = bfm.u_base, bfm.w_shp_base, bfm.w_exp_base
+        # # load for optimization
+        # bfm = BFMModel(bfm_fp, shape_dim=kvs.get('shape_dim', 40), exp_dim=kvs.get('exp_dim', 10))
+        # self.tri = bfm.tri
+        # self.u_base, self.w_shp_base, self.w_exp_base = bfm.u_base, bfm.w_shp_base, bfm.w_exp_base
 
         # config
         self.gpu_mode = kvs.get('gpu_mode', False)
@@ -95,24 +95,24 @@ class TDDFA_ONNX(object):
 
         return param_lst, roi_box_lst
 
-    def recon_vers(self, param_lst, roi_box_lst, **kvs):
-        dense_flag = kvs.get('dense_flag', False)
-        size = self.size
+    # def recon_vers(self, param_lst, roi_box_lst, **kvs):
+    #     dense_flag = kvs.get('dense_flag', False)
+    #     size = self.size
 
-        ver_lst = []
-        for param, roi_box in zip(param_lst, roi_box_lst):
-            R, offset, alpha_shp, alpha_exp = _parse_param(param)
-            if dense_flag:
-                inp_dct = {
-                    'R': R, 'offset': offset, 'alpha_shp': alpha_shp, 'alpha_exp': alpha_exp
-                }
-                pts3d = self.bfm_session.run(None, inp_dct)[0]
-                pts3d = similar_transform(pts3d, roi_box, size)
-            else:
-                pts3d = R @ (self.u_base + self.w_shp_base @ alpha_shp + self.w_exp_base @ alpha_exp). \
-                    reshape(3, -1, order='F') + offset
-                pts3d = similar_transform(pts3d, roi_box, size)
+    #     ver_lst = []
+    #     for param, roi_box in zip(param_lst, roi_box_lst):
+    #         R, offset, alpha_shp, alpha_exp = _parse_param(param)
+    #         if dense_flag:
+    #             inp_dct = {
+    #                 'R': R, 'offset': offset, 'alpha_shp': alpha_shp, 'alpha_exp': alpha_exp
+    #             }
+    #             pts3d = self.bfm_session.run(None, inp_dct)[0]
+    #             pts3d = similar_transform(pts3d, roi_box, size)
+    #         else:
+    #             pts3d = R @ (self.u_base + self.w_shp_base @ alpha_shp + self.w_exp_base @ alpha_exp). \
+    #                 reshape(3, -1, order='F') + offset
+    #             pts3d = similar_transform(pts3d, roi_box, size)
 
-            ver_lst.append(pts3d)
+    #         ver_lst.append(pts3d)
 
-        return ver_lst
+    #     return ver_lst
