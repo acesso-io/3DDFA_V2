@@ -8,7 +8,7 @@ sys.path.append('..')
 
 import argparse
 import numpy as np
-import torch
+# import torch
 
 
 def _to_ctype(arr):
@@ -27,7 +27,7 @@ def str2bool(v):
 
 
 def load_model(model, checkpoint_fp):
-    checkpoint = torch.load(checkpoint_fp, map_location=lambda storage, loc: storage)['state_dict']
+    # checkpoint = torch.load(checkpoint_fp, map_location=lambda storage, loc: storage)['state_dict']
     model_dict = model.state_dict()
     # because the model is trained by multiple gpus, prefix module should be removed
     for k in checkpoint.keys():
@@ -41,14 +41,14 @@ def load_model(model, checkpoint_fp):
     return model
 
 
-class ToTensorGjz(object):
-    def __call__(self, pic):
-        if isinstance(pic, np.ndarray):
-            img = torch.from_numpy(pic.transpose((2, 0, 1)))
-            return img.float()
+# class ToTensorGjz(object):
+#     def __call__(self, pic):
+#         if isinstance(pic, np.ndarray):
+            # img = torch.from_numpy(pic.transpose((2, 0, 1)))
+    #         return img.float()
 
-    def __repr__(self):
-        return self.__class__.__name__ + '()'
+    # def __repr__(self):
+    #     return self.__class__.__name__ + '()'
 
 
 class NormalizeGjz(object):
