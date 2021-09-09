@@ -37,9 +37,10 @@ def P2sRt(P):
 
 
 def matrix2angle(R):
-    """ compute three Euler angles from a Rotation Matrix. Ref: http://www.gregslabaugh.net/publications/euler.pdf
-    refined by: https://stackoverflow.com/questions/43364900/rotation-matrix-to-euler-angles-with-opencv
-    todo: check and debug
+    """ compute three Euler angles from a Rotation Matrix.
+    References:
+        http://www.gregslabaugh.net/publications/euler.pdf
+        https://stackoverflow.com/questions/43364900/rotation-matrix-to-euler-angles-with-opencv
      Args:
          R: (3,3). rotation matrix
      Returns:
@@ -60,6 +61,9 @@ def matrix2angle(R):
         y = atan2(R[2, 1] / cos(x), R[2, 2] / cos(x))
         z = atan2(R[1, 0] / cos(x), R[0, 0] / cos(x))
 
+    # sign fix
+    y, z, = -y, -z
+
     return x, y, z
 
 
@@ -67,10 +71,9 @@ def calc_pose(param):
     P = param[:12].reshape(3, -1)  # camera matrix
     s, R, t3d = P2sRt(P)
     P = np.concatenate((R, t3d.reshape(3, -1)), axis=1)  # without scale
+
     pose = matrix2angle(R)
-    print("pose before", pose)
     pose = [p * 180 / np.pi for p in pose]
-    print("pose after", pose)
 
     return P, pose
 
@@ -129,7 +132,7 @@ def plot_pose_box(img, P, ver, color=(40, 255, 0), line_width=2):
     return img
 
 def viz_pose(img, param_lst, detection_lst, show_flag=False, wfp=None):
-    
+
     for param, det in zip(param_lst, detection_lst):
         # for param in param_lst:
         print("det", det)
